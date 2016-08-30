@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <netdb.h>
 #include <bits/stdc++.h>
+#include "proxy_parse.h"
 using namespace std;
 
 FILE *fsocket;
@@ -34,12 +35,12 @@ int bindSocket(int PORT){
 	}
 
 	// Limit on number of sequential connects
-	if(listen(sockfd,10)==-1){
+	if(listen(sockfd,25)==-1){
 		perror("Listen");
 		exit(1);
 	}
 
-	printf("\nListening on Port %d \n\n",PORT);
+	debug("\nListening on Port %d \n\n",PORT);
 	fflush(stdout);
 	return sockfd;
 }
@@ -49,15 +50,14 @@ int acceptConnection(int sockfd){
 	int newfd = accept(sockfd,(struct sockaddr *)&client_addr,&sin_size);
 	//fsocket = fdopen(newfd,"w+");
 
-	printf("\nNew Client CONNECTED %s %d\n\n",
+	debug("\nNew Client CONNECTED %s %d\n\n",
 		inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
 	return newfd;
 }
 
 int closeConnection(int sockfd){
-	//printf("\nCONNECTION CLOSED\n");
 	close(sockfd);
-	printf("\nCONNECTION CLOSED %s %d\n\n",
+	debug("\nCONNECTION CLOSED %s %d\n\n",
 	inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
 }
 

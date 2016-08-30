@@ -11,28 +11,34 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "proxy_parse.h"
-#include "proxy_parse.c"
 using namespace std;
 
 char buffer[4096];
 map<string,string> request;
 map<string,string> reply;
-int dbug=1;
 ParsedRequest *req;
+
+int sendResponse(int newfd,int status){
+	if(status<0){
+		snprintf(buffer,4096,"HTTP/1.0 500 Internal Server Error\r\nConnection: close\r\n\r\n");
+		send(newfd,buffer,strlen(buffer),0);
+	}
+	return 0;
+}
 
 int getResponse(int sockfd,int newfd){
 	memset(buffer,0,sizeof(buffer));
 	int size,tot=0;
 	while((size=recv(sockfd,buffer,4096,0))>0){
-		fwrite(buffer,1,size,stdout);
+		if(DEBUG)
+			fwrite(buffer,1,size,stdout);
 		send(newfd,buffer,size,0);
-		cout<<"\nNum bytes read  "<<size<<endl;
+		debug("\nNum bytes read  %d\n",size);
 		tot+=size;
 		memset(buffer,0,sizeof(buffer));
 	}
-	cout<<"\nTOTAL Num bytes read  "<<tot<<endl;
-	if(dbug)
-		printf("Response Sent\n");
+
+	debug("\nTOTAL Num bytes read  %d\n",tot);
 	return 0;
 }
 
@@ -45,8 +51,7 @@ int sendRequest(const char* msg, int newfd){
 	send(sockfd,msg,strlen(msg),0);
 	getResponse(sockfd, newfd);	
 	close(sockfd);
-	if(dbug)
-		printf("Request Processed closed\n");
+	debug("Request Processed\n");
 	return 0;
 }
 
@@ -58,7 +63,7 @@ int getRequest(int newfd){
 		//closeConnection(newfd);
 		return 0;
 	}
-	printf("%s\n",buffer);
+	debug("%s\n",buffer);
    
 	int len = strlen(buffer); 
 	//Create a ParsedRequest to use. This ParsedRequest
@@ -69,10 +74,10 @@ int getRequest(int newfd){
 	   return -1;
 	}
 
-	printf("Method:%s\n", req->method);
-	printf("Host:%s\n", req->host);
-	printf("Path:%s\n", req->path);
-	printf("Buff:%s\n", req->buf);
+	debug("Method:%s\n", req->method);
+	debug("Host:%s\n", req->host);
+	debug("Path:%s\n", req->path);
+	debug("Buff:%s\n", req->buf);
 
 	if (ParsedHeader_set(req, "Host", req->host) < 0){
 		printf("set header key not work\n");
@@ -93,7 +98,7 @@ int getRequest(int newfd){
 		return -1;
 	}
 	buf[rlen] ='\0';
-	cout<<(s+string(buf)).c_str()<<endl;
+	debug("%s\n",(s+string(buf)).c_str());
 	sendRequest((s+string(buf)).c_str(), newfd);
 
 	// Call destroy on any ParsedRequests that you
