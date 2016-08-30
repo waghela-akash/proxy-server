@@ -11,13 +11,18 @@
 using namespace std;
 
 int PORT=3490;
+int child=0;
+void handler(int sig){
+	child--;
+}
 
 int main(int argc, char *argv[]){
 	
 	PORT=atol(argv[1]);
 	
-	int fd=bindSocket(PORT);
-	int child=0;
+	int fd=bindSocket(PORT);	
+
+	signal(SIGCHLD, handler);
 	while(1){
 		int newfd = acceptConnection(fd);
 		if(newfd>0 && fork()==0){		
@@ -34,12 +39,15 @@ int main(int argc, char *argv[]){
 			closeConnection(newfd);
 		}
 		debug("Number of child %d\n",child);
-		if(child >= 20){
+		//printf("Number of child %d\n",child);
+
+		while(child>=20);
+		/*if(child >= 20){
 			while(child--){
 				int status;
 				wait(&status);
 			}
-		}
+		}*/
 	}
 	return 0;
 }

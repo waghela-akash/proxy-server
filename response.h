@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <time.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include "proxy_parse.h"
@@ -55,11 +56,38 @@ int sendRequest(const char* msg, int newfd){
 	return 0;
 }
 
+int recvTimeOut(int newfd){
+	
+	memset(buffer,0,sizeof(buffer));
+	int bytes_recieved=0,now;
+	while(1){
+		cout<<"Got "<<bytes_recieved<<" "<<now<<endl;
+		fd_set fds;
+		int rc;
+		struct timeval timeout;	
+		timeout.tv_sec = 5;
+		timeout.tv_usec = 0;
+		FD_ZERO(&fds);
+		FD_SET(newfd, &fds); 
+		rc = select(FD_SETSIZE,&fds, (fd_set *)NULL,(fd_set *)NULL,&timeout);
+		if(rc == -1)
+			return -1;
+		else if(rc == 0)
+			break;
+		else if(rc == 1){
+			now = recv(newfd,buffer+bytes_recieved,4096,0);
+			bytes_recieved+=now;
+		}
+	}
+	if(bytes_recieved<=0)
+		return -1;
+	cout<<buffer<<endl;
+	return 1;
+}
+
 int getRequest(int newfd){
 		
-	memset(buffer,0,sizeof(buffer));
-	int bytes_recieved = recv(newfd,buffer,4096,0);
-	if(bytes_recieved<=0){
+	if(recvTimeOut(newfd)<=0){
 		//closeConnection(newfd);
 		return 0;
 	}

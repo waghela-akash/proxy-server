@@ -8,6 +8,7 @@
 #include <netdb.h>
 #include <bits/stdc++.h>
 #include "proxy_parse.h"
+#include <signal.h>
 using namespace std;
 
 FILE *fsocket;
