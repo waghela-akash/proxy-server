@@ -57,7 +57,8 @@ int main(int argc, char *argv[]){
 		debug("Number of child %d\n",child);
 
 		// Parent waits for some child to exit
-		while(child>=20);
+		while(child>=20)
+			sleep(0.1);
 	}
 	return 0;
 }

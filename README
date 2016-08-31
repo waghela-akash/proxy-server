@@ -9,3 +9,7 @@
 
 DESCRIBE YOUR CODE HERE AND DESIGN DECISIONS YOU MADE
 
+->	Request length is less than 4096 bytes.
+->	Server should be given no more than 20 simultaneous/ parallel requests.
+->	All parsing error and buffer overflows are replied with “500 Internal Server Error”.
+->	The server reads a request until there is something to read and then quits if request end is observed([CLRF][CLRF]) else waits for a fixed amount of time before quitting.
