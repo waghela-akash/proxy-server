@@ -60,22 +60,23 @@ int recvTimeOut(int newfd){
 	
 	memset(buffer,0,sizeof(buffer));
 	int bytes_recieved=0,now;
+	fd_set fds;
+	int rc;
+	struct timeval timeout;	
+	timeout.tv_sec = 5;
+	timeout.tv_usec = 0;
+	FD_ZERO(&fds);
+	FD_SET(newfd, &fds);
 	while(1){
-		cout<<"Got "<<bytes_recieved<<" "<<now<<endl;
-		fd_set fds;
-		int rc;
-		struct timeval timeout;	
-		timeout.tv_sec = 5;
-		timeout.tv_usec = 0;
-		FD_ZERO(&fds);
-		FD_SET(newfd, &fds); 
 		rc = select(FD_SETSIZE,&fds, (fd_set *)NULL,(fd_set *)NULL,&timeout);
 		if(rc == -1)
 			return -1;
-		else if(rc == 0)
+		else if(rc == 0){
+			cout<<"Got "<<bytes_recieved<<" "<<now<<endl;
 			break;
+		}
 		else if(rc == 1){
-			now = recv(newfd,buffer+bytes_recieved,4096,0);
+			now = recv(newfd,buffer+bytes_recieved,4096-bytes_recieved ,0);
 			bytes_recieved+=now;
 		}
 	}
@@ -87,7 +88,14 @@ int recvTimeOut(int newfd){
 
 int getRequest(int newfd){
 		
-	if(recvTimeOut(newfd)<=0){
+	int bytes_recieved=0,now;
+	while((now=recv(newfd,buffer+bytes_recieved,4096-bytes_recieved,0))>0){
+		bytes_recieved+=now;
+		//cout<<buffer<<endl;
+		if(strcmp(buffer+(strlen(buffer)-4),"\r\n\r\n")==0)
+			break;
+	}	
+	if(bytes_recieved<=0){
 		//closeConnection(newfd);
 		return 0;
 	}

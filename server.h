@@ -43,6 +43,7 @@ int bindSocket(int PORT){
 
 	debug("\nListening on Port %d \n\n",PORT);
 	fflush(stdout);
+
 	return sockfd;
 }
 
@@ -50,7 +51,14 @@ int acceptConnection(int sockfd){
 	unsigned int sin_size = sizeof(struct sockaddr_in);
 	int newfd = accept(sockfd,(struct sockaddr *)&client_addr,&sin_size);
 	//fsocket = fdopen(newfd,"w+");
-
+	struct timeval timeout;      
+    timeout.tv_sec = 10;
+    timeout.tv_usec = 0;
+    /*
+    if (setsockopt (newfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
+                sizeof(timeout)) < 0)
+        perror("setsockopt failed\n");
+	*/
 	debug("\nNew Client CONNECTED %s %d\n\n",
 		inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
 	return newfd;
