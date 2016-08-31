@@ -15,10 +15,10 @@
 using namespace std;
 
 char buffer[4096];
-map<string,string> request;
-map<string,string> reply;
-ParsedRequest *req;
+ParsedRequest *req;			// Stores parsed Request from the client
 
+// This function is only invoked in case of an ERROR in proxt server
+// Returns to client "Internal Server Error" and closes the connection
 int sendResponse(int newfd,int status){
 	if(status<0){
 		snprintf(buffer,4096,"HTTP/1.0 500 Internal Server Error\r\nConnection: close\r\n\r\n");
@@ -27,6 +27,10 @@ int sendResponse(int newfd,int status){
 	return 0;
 }
 
+// Getting Response from the requested HOST and then sending
+// it to client in batch of 4096 bytes.
+// The response is untamperd and "no checks" are made as specified in
+// the assignment
 int getResponse(int sockfd,int newfd){
 	memset(buffer,0,sizeof(buffer));
 	int size,tot=0;
@@ -43,7 +47,8 @@ int getResponse(int sockfd,int newfd){
 	return 0;
 }
 
-
+// Sending request to the server on the sepicified port
+// If no PORT is specified then PORT=80
 int sendRequest(const char* msg, int newfd){
 	int port = 80;
 	if(req->port != NULL)
@@ -52,12 +57,13 @@ int sendRequest(const char* msg, int newfd){
 	send(sockfd,msg,strlen(msg),0);
 	getResponse(sockfd, newfd);	
 	close(sockfd);
-	debug("Request Processed\n");
 	return 0;
 }
 
+// Recieving a request until TimeOUT using select()
+// Code Courtsey PDF provided in Project1
 int recvTimeOut(int newfd){
-	
+
 	memset(buffer,0,sizeof(buffer));
 	int bytes_recieved=0,now;
 	fd_set fds;
@@ -86,8 +92,14 @@ int recvTimeOut(int newfd){
 	return 1;
 }
 
+// Getting request from client, the size of the request is 
+// bounded by 4096 bytes
 int getRequest(int newfd){
 		
+	// Recieving a GET request till "\r\n\r\n" is read or timeout
+	// In case of timeout it will automatically give parsing error
+	// and 500 Internal Server Error will be reported as specified
+	// TimeOut is set by setsockopt() during connection
 	int bytes_recieved=0,now;
 	while((now=recv(newfd,buffer+bytes_recieved,4096-bytes_recieved,0))>0){
 		bytes_recieved+=now;
@@ -95,13 +107,15 @@ int getRequest(int newfd){
 		if(strcmp(buffer+(strlen(buffer)-4),"\r\n\r\n")==0)
 			break;
 	}	
+
+	// If nothing is recived close the connection
 	if(bytes_recieved<=0){
-		//closeConnection(newfd);
 		return 0;
 	}
 	debug("%s\n",buffer);
    
 	int len = strlen(buffer); 
+
 	//Create a ParsedRequest to use. This ParsedRequest
 	//is dynamically allocated.
 	req = ParsedRequest_create();
@@ -115,16 +129,19 @@ int getRequest(int newfd){
 	debug("Path:%s\n", req->path);
 	debug("Buff:%s\n", req->buf);
 
+	// Sets the Host the request
 	if (ParsedHeader_set(req, "Host", req->host) < 0){
 		printf("set header key not work\n");
 		return -1;
 	}
 
+	// Sets the connection to close as specified in the instructions
 	if (ParsedHeader_set(req, "Connection", "close") < 0){
 		printf("set header key not work\n");
 		return -1;
 	}
 
+	// Building the GET request to the specified host
 	string s = "GET "+string(req->path)+" "+string(req->version)+"\r\n";
 
 	int rlen = ParsedHeader_headersLen(req);

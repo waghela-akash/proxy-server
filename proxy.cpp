@@ -1,3 +1,15 @@
+/*
+FUNCTION CALLS IN THIS FILE
+functions in server.h
+	acceptCOnnection()
+	bindSocket()
+	closeConnection()
+
+functions in response.h
+	getRequest()
+	sendResponse()
+*/
+
 #include <bits/stdc++.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -12,6 +24,9 @@ using namespace std;
 
 int PORT=3490;
 int child=0;
+
+// Gets Called every time a child exits
+// helps restrict number of child to less than 20
 void handler(int sig){
 	child--;
 }
@@ -23,6 +38,7 @@ int main(int argc, char *argv[]){
 	int fd=bindSocket(PORT);	
 
 	signal(SIGCHLD, handler);
+
 	while(1){
 		int newfd = acceptConnection(fd);
 		if(newfd>0 && fork()==0){		
@@ -39,15 +55,9 @@ int main(int argc, char *argv[]){
 			closeConnection(newfd);
 		}
 		debug("Number of child %d\n",child);
-		//printf("Number of child %d\n",child);
 
+		// Parent waits for some child to exit
 		while(child>=20);
-		/*if(child >= 20){
-			while(child--){
-				int status;
-				wait(&status);
-			}
-		}*/
 	}
 	return 0;
 }

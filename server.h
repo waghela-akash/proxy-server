@@ -15,6 +15,8 @@ FILE *fsocket;
 struct sockaddr_in server_addr;
 struct sockaddr_in client_addr;
 
+
+// Binds a PORT and listens on it for requests
 int bindSocket(int PORT){
 	int sockfd;
 
@@ -47,14 +49,15 @@ int bindSocket(int PORT){
 	return sockfd;
 }
 
+// Accepts a connection and returns the socket descriptor
 int acceptConnection(int sockfd){
 	unsigned int sin_size = sizeof(struct sockaddr_in);
 	int newfd = accept(sockfd,(struct sockaddr *)&client_addr,&sin_size);
-	//fsocket = fdopen(newfd,"w+");
+	/*
 	struct timeval timeout;      
     timeout.tv_sec = 10;
     timeout.tv_usec = 0;
-    /*
+
     if (setsockopt (newfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
                 sizeof(timeout)) < 0)
         perror("setsockopt failed\n");
@@ -64,10 +67,12 @@ int acceptConnection(int sockfd){
 	return newfd;
 }
 
+// Closes the COnnection of the specified socket
 int closeConnection(int sockfd){
 	close(sockfd);
 	debug("\nCONNECTION CLOSED %s %d\n\n",
 	inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
+	return 0;
 }
 
 int connectServer(const char* hostName,int PORT){
@@ -82,7 +87,6 @@ int connectServer(const char* hostName,int PORT){
 		perror("Socket");
 		exit(1);
 	}
-
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(PORT);
 	// simple copy function
